@@ -18,6 +18,8 @@ const (
 
 	// From /usr/include/sys/syslog.h.
 	// These are the same on Linux, BSD, and OS X.
+	// Go provides a keyword iota that can be used when declaring enumerated constants.
+	// This keyword yields an incremented value by 1 starting from 0, each time it is used.
 	LOG_EMERG Priority = iota
 	LOG_ALERT
 	LOG_CRIT
@@ -62,7 +64,6 @@ const (
 func validatePriority(p Priority) error {
 	if p < 0 || p > LOG_LOCAL7|LOG_DEBUG {
 		return errors.New("log/syslog: invalid priority")
-	} else {
-		return nil
 	}
+	return nil
 }

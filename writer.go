@@ -59,9 +59,9 @@ func (w *Writer) connect() (serverConn, error) {
 		w.hostname = hostname
 
 		return conn, nil
-	} else {
-		return nil, err
 	}
+
+	return nil, err
 }
 
 // SetFormatter changes the formatter function for subsequent messages.
@@ -180,6 +180,48 @@ func (w *Writer) writeAndRetryWithPriority(p Priority, s string) (int, error) {
 		return 0, err
 	}
 	return w.write(conn, p, s)
+}
+
+// WriteWithOverrides allows you to write to the syslogger and overwrite the default values passed in during the
+// Dial function. This allows you to share the connection with many processes.
+func (w *Writer) WriteWithOverrides(severity Priority, hostname, tag, msg string) (int, error) {
+	pr := (w.priority & facilityMask) | (severity & severityMask)
+
+	return w.writeAndRetryWithOverrides(pr, hostname, tag, msg)
+}
+
+func (w *Writer) writeAndRetryWithOverrides(p Priority, hostname, tag, msg string) (int, error) {
+	conn := w.getConn()
+	if conn != nil {
+		if n, err := w.writeWithOverrides(conn, p, hostname, tag, msg); err == nil {
+			return n, err
+		}
+	}
+
+	var err error
+	if conn, err = w.connect(); err != nil {
+		return 0, err
+	}
+	return w.writeWithOverrides(conn, p, hostname, tag, msg)
+}
+
+func (w *Writer) writeWithOverrides(conn serverConn, p Priority, hostname, tag, msg string) (int, error) {
+	// ensure it ends in a \n
+	if !strings.HasSuffix(msg, "\n") {
+		msg += "\n"
+	}
+	if hostname == "" {
+		hostname = w.hostname
+	}
+
+	err := conn.writeString(w.framer, w.formatter, p, w.hostname, tag, msg)
+	if err != nil {
+		return 0, err
+	}
+	// Note: return the length of the input, not the number of
+	// bytes printed by Fprintf, because this must behave like
+	// an io.Writer.
+	return len(msg), nil
 }
 
 // write generates and writes a syslog formatted string. It formats the
