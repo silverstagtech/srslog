@@ -184,8 +184,8 @@ func (w *Writer) writeAndRetryWithPriority(p Priority, s string) (int, error) {
 
 // WriteWithOverrides allows you to write to the syslogger and overwrite the default values passed in during the
 // Dial function. This allows you to share the connection with many processes.
-func (w *Writer) WriteWithOverrides(severity Priority, hostname, tag, msg string) (int, error) {
-	pr := (w.priority & facilityMask) | (severity & severityMask)
+func (w *Writer) WriteWithOverrides(facility, severity Priority, hostname, tag, msg string) (int, error) {
+	pr := (facility & facilityMask) | (severity & severityMask)
 
 	return w.writeAndRetryWithOverrides(pr, hostname, tag, msg)
 }
