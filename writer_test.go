@@ -254,6 +254,39 @@ func TestWriteWithPriorityAndFacility(t *testing.T) {
 	checkWithPriorityAndTag(t, LOG_DEBUG|LOG_LOCAL5, "tag", "hostname", "this is a test message", <-done)
 }
 
+func TestWriteWithOverrides(t *testing.T) {
+	done := make(chan string)
+	addr, sock, srvWG := startServer("udp", "", done)
+	defer sock.Close()
+	defer srvWG.Wait()
+
+	w := Writer{
+		priority: LOG_ERR,
+		tag:      "tag",
+		hostname: "hostname",
+		network:  "udp",
+		raddr:    addr,
+	}
+
+	_, err := w.connect()
+	if err != nil {
+		t.Errorf("failed to connect: %v", err)
+	}
+	defer w.Close()
+
+	var bytes int
+	bytes, err = w.WriteWithOverrides(LOG_DAEMON, LOG_CRIT, "test_host", "test_tag", "this is a test message")
+	if err != nil {
+		t.Errorf("failed to write: %v", err)
+	}
+	if bytes == 0 {
+		t.Errorf("zero bytes written")
+	}
+	output := <-done
+	t.Log(output)
+	checkWithPriorityAndTag(t, LOG_CRIT|LOG_DAEMON, "test_tag", "test_host", "this is a test message", output)
+}
+
 func TestDebug(t *testing.T) {
 	done := make(chan string)
 	addr, sock, srvWG := startServer("udp", "", done)

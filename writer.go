@@ -214,7 +214,7 @@ func (w *Writer) writeWithOverrides(conn serverConn, p Priority, hostname, tag, 
 		hostname = w.hostname
 	}
 
-	err := conn.writeString(w.framer, w.formatter, p, w.hostname, tag, msg)
+	err := conn.writeString(w.framer, w.formatter, p, hostname, tag, msg)
 	if err != nil {
 		return 0, err
 	}
